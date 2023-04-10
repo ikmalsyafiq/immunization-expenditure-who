@@ -1,7 +1,27 @@
-[theme] # You have to add this line
-
+[theme]
 primaryColor = '#FF8C02' # Bright Orange
-
 backgroundColor = '#00325B' # Dark Blue
-
 secondaryBackgroundColor = '#55B2FF' # Lighter Blue
+
+[server]
+headless = true
+enableCORS=false
+
+[general]
+email = "youremail@example.com"
+
+[logger]
+level = "warning"
+
+[web]
+favicon = "favicon.png"
+
+[theme]
+base = "dark"
+font = "sans serif"
+
+[css]
+body {
+    background-color: #00325B;
+    color: white; /* Added line to set text color */
+}
