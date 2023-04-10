@@ -22,8 +22,9 @@ st.markdown(
 )
 
 # Filter the data based on year and country
-years = st.multiselect('Select year(s)', df['Year'].unique())
-all_countries = st.checkbox('Select all countries')
+latest_year = df['Year'].max()
+years = st.multiselect('Select year(s)', df['Year'].unique(), default=[latest_year])
+all_countries = st.checkbox('Select all countries', value=True)
 if all_countries:
     countries = df['Country'].unique()
 else:
@@ -31,8 +32,11 @@ else:
 
 filtered_df = df[df['Year'].isin(years) & df['Country'].isin(countries)]
 
+# Set default columns to display
+default_columns = ['Country', 'Year', 'Immunization USD Mil', 'Immunization USD Mil_predicted']
+
 # Allow the user to choose which columns to show in the data table
-columns = st.multiselect('Select column(s) to display', options=filtered_df.columns)
+columns = st.multiselect('Select column(s) to display', options=filtered_df.columns, default=default_columns)
 
 # Display the filtered data in a table with the selected columns
 st.subheader('Data Table')
