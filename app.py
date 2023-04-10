@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
+
 # Load the CSV file
 df = pd.read_csv('cleaned_data_with_predictions.csv')
 
