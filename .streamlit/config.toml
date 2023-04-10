@@ -1,7 +1,6 @@
-[theme] # You have to add this line
-
-primaryColor = '#FF8C02' # Bright Orange
-
-backgroundColor = '#4ebde5' # Dark Blue
-
-secondaryBackgroundColor = '#f7f7f7' # White
+[theme]
+primaryColor = "#E694FF"
+backgroundColor = "#00172B"
+secondaryBackgroundColor = "#0083B8"
+textColor = "#DCDCDC"
+font = "sans-serif"
