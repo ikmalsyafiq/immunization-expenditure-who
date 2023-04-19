@@ -44,7 +44,7 @@ mean absolute percentage error for our prediction is {mean_mape}%. {output_str}"
 
 
 # Filter the data based on year, country, and prediction
-years = st.multiselect('Select year(s)', df['Year'].unique(), default=[df['Year'].max()]))
+years = st.multiselect('Select year(s)', df['Year'].unique(), default=[df['Year'].max()])
 all_countries = st.checkbox('Select all countries', value=True)
 if all_countries:
     countries = df['Country'].unique()
