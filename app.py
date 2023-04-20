@@ -4,6 +4,7 @@ import plotly.express as px
 import numpy as np
 from scipy import stats
 import pycountry
+from sklearn.metrics import r2_score
 
 def get_country_iso_alpha3(country_name):
     try:
@@ -14,8 +15,6 @@ def get_country_iso_alpha3(country_name):
 # Load the CSV file
 df = pd.read_csv('cleaned_data_with_predictions.csv')
 df["Year"] = pd.to_datetime(df["Year"], format='%Y').dt.strftime('%Y')
-
-
 
 # Add ISO country codes to the dataset
 df['iso_alpha'] = df['Country'].apply(get_country_iso_alpha3)
@@ -36,13 +35,25 @@ for year, num_countries in grouped_df.iterrows():
 # Set the page title
 st.title('Total Immunization Expenditure Prediction')
 mean_mape = round(df['mape'].mean(), 0)
+median_mape = round(df['mape'].median(), 0)
+r2 = round(r2_score(df['Immunization USD Mil'], df['Immunization USD Mil_predicted']),2)
+r2_100 = r2*100
+
 st.markdown(f"""This is visualization for total immunization expenditure prediction. We based our prediction on
-immunization coverage, land area, population, vaccine cost, total vaccine cost, and government immunization cost. Our 
-mean absolute percentage error for our prediction is {mean_mape}%. {output_str}""")
+previous years total immunization cost, immunization coverage, land area and population.""") 
+
+st.markdown(f"""Our 
+mean absolute percentage error for our prediction is {mean_mape}%. This is high due to the outlier countries. However our
+median absolute percentage error for our prediction is {median_mape}%.""")
+
+st.markdown(f"""Our R2 Score is {r2}, means that 72% of the 
+variability in the dependent variable (i.e., the variable being predicted by the model)
+can be explained by the independent variables (i.e., the variables used to make the prediction)
+in the regression model. In other words, the model explains {r2_100}% of the variation
+in the data, and the remaining {100-r2_100}% of the variation is unexplained.""")
+
+st.markdown(f"""{output_str}""")
             
-
-
-
 # Filter the data based on year, country, and prediction
 years = st.multiselect('Select year(s)', df['Year'].unique(), default=[df['Year'].max()])
 all_countries = st.checkbox('Select all countries', value=True)
@@ -51,30 +62,15 @@ if all_countries:
 else:
     countries = st.multiselect('Select country(ies)', df['Country'].unique())
 
-outlier_tresh = st.selectbox('Select outlier threshold', [0.5, 1, 1.5, 2, 2.5, 3], index=1)
-# Detect outlier country based on mape column
-df_out_pre = df.dropna(subset=['mape'])
-z_scores_pre = np.abs(stats.zscore(df_out_pre['mape']))
-threshold = outlier_tresh
-outliers_pre = df_out_pre[(z_scores_pre > threshold) | (z_scores_pre < -threshold)]
+st.markdown("""Using a higher threshold will result in fewer 
+outliers being detected, while using a lower threshold 
+will result in more outliers being detected. """)
+            
+outlier_tresh = st.selectbox('Select outlier threshold', [ 1, 1.5, 2], index=1)
 
-df['is_outlier'] = df.index.isin(outliers_pre.index)
-df['is_outlier'] = df['is_outlier'].apply(lambda x: 'Yes' if x else 'No')
-
-
-outlier_check = st.checkbox('Exclude outlier', value=False)
-if outlier_check:
-    ex_outlier = ['No']
-else:
-    ex_outlier = ['Yes','No']
-# all_predictions = st.checkbox('Select all predictions', value=True)
-# if all_predictions:
-#     predictions = df['prediction'].unique()
-# else:
-#     predictions = st.multiselect('Select prediction(s)', df['prediction'].unique())
 
 #filtered_df = df[df['Year'].isin(years) & df['Country'].isin(countries) & df['prediction'].isin(predictions)]
-filtered_df = df[df['Year'].isin(years) & df['Country'].isin(countries) & df['is_outlier'].isin(ex_outlier) ]
+filtered_df = df[df['Year'].isin(years) & df['Country'].isin(countries)  ]
 # Allow the user to choose which columns to show in the data table
 default_columns = ['Country', 'Year', 'Immunization USD Mil', 'Immunization USD Mil_predicted', 'mape', 'prediction']
 columns = st.multiselect('Select column(s) to display', options=filtered_df.columns, default=default_columns)
@@ -82,27 +78,34 @@ columns = st.multiselect('Select column(s) to display', options=filtered_df.colu
 # Display the filtered data in a table with the selected columns
 st.subheader('Data Table')
 mean_mape_filt = round(filtered_df['mape'].mean(), 0)
-st.markdown(f"""Filtered data mean absolute percentage error is {mean_mape_filt}%""")
+median_mape_filt = round(filtered_df['mape'].median(), 0)
+st.markdown(f"""Filtered data mean absolute percentage error is {mean_mape_filt}%
+ and median absolute percentage error is {median_mape_filt}%.""")
 st.dataframe(filtered_df[columns])
 
 # Detect outlier country based on mape column
 df_out = filtered_df.dropna(subset=['mape'])
-z_scores = np.abs(stats.zscore(df_out['mape']))
-if outlier_check:
-    threshold = 1000000
-else:
-    threshold = outlier_tresh
-outliers = df_out[(z_scores > threshold) | (z_scores < -threshold)]
+q1 = df_out['mape'].quantile(0.25)
+q3 = df_out['mape'].quantile(0.75)
+
+iqr = q3 - q1
+outliers = df_out[(df_out['mape'] < q1 - outlier_tresh*iqr) | (df_out['mape'] > q3 + outlier_tresh*iqr)]
 
 # Display the outlier country if exists
 if not outliers.empty:
     try:
         st.subheader("Outlier Countries")
-        st.markdown("""These are the countries that are considered outliers due to their predicted total immunization cost over 1 standard deviation in the Z-score scale.
-        In other words, outliers with Z-scores over 1 standard deviation are values that are much 
-        further away from the typical values in a dataset, and may warrant further investigation to understand why they differ so much.
+        st.markdown("""These are the countries that are considered outliers based on their predicted total immunization cost.
+         The outlier method we are using here is based on the interquartile range (IQR). 
+         The IQR is a measure of variability that is defined as the
+         difference between the third quartile (Q3) and the first quartile (Q1) of a dataset. 
+         The IQR represents the spread of the middle 50% of the data and is less sensitive to 
+         extreme values than other measures of variability such as the range or standard deviation.
+         To detect outliers using the IQR method, we typically use a threshold of 1.5 times the IQR. 
+         According to Tukey's rule for outlier detection, any data points that fall below Q1-1.5IQR
+         or above Q3+1.5IQR are considered outliers.
         """)
-        st.dataframe(outliers[["Country", "Year", 'Immunization USD Mil', 'Immunization USD Mil_predicted', "mape",'is_outlier']].reset_index(drop=True))
+        st.dataframe(outliers[["Country", "Year", 'Immunization USD Mil', 'Immunization USD Mil_predicted', "mape"]].reset_index(drop=True))
 
         st.subheader('Choropleth Map for Outlier Countries')
         value_col_options = filtered_df.columns
@@ -176,5 +179,6 @@ else: # Box Plot
     st.subheader(subheader_text)
 
     fig = px.box(filtered_df, x=x_column, y=y_column,hover_data=['Country','Year','Immunization USD Mil', 'Immunization USD Mil_predicted', 'mape'])
+
 
 st.plotly_chart(fig)
