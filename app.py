@@ -53,7 +53,8 @@ in the regression model. In other words, the model explains {r2_100}% of the var
 in the data, and the remaining {100-r2_100}% of the variation is unexplained.""")
 
 st.markdown(f"""{output_str}""")
-            
+
+st.subheader("Select Year(s), Country(s), Outlier Threshold, and Column(s)")        
 # Filter the data based on year, country, and prediction
 years = st.multiselect('Select year(s)', df['Year'].unique(), default=[df['Year'].max()])
 all_countries = st.checkbox('Select all countries', value=True)
