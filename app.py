@@ -46,7 +46,7 @@ st.markdown(f"""Our
 mean absolute percentage error for our prediction is {mean_mape}%. This is high due to the outlier countries. However our
 median absolute percentage error for our prediction is {median_mape}%.""")
 
-st.markdown(f"""Our R2 Score is {r2}, means that 72% of the 
+st.markdown(f"""Our R2 Score is {r2}, means that {r2_100}% of the 
 variability in the dependent variable (i.e., the variable being predicted by the model)
 can be explained by the independent variables (i.e., the variables used to make the prediction)
 in the regression model. In other words, the model explains {r2_100}% of the variation
