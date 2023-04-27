@@ -34,8 +34,8 @@ for year, num_countries in grouped_df.iterrows():
 
 # Set the page title
 st.title('Total Immunization Expenditure Prediction')
-mean_mape = round(df['mape'].mean(), 0)
-median_mape = round(df['mape'].median(), 0)
+mean_mape = round(df['mape_immunization'].mean(), 0)
+median_mape = round(df['mape_immunization'].median(), 0)
 r2 = round(r2_score(df['Immunization USD Mil'], df['Immunization USD Mil_predicted']),2)
 r2_100 = r2*100
 
@@ -43,8 +43,8 @@ st.markdown(f"""This is visualization for total immunization expenditure predict
 previous years total immunization cost, immunization coverage, land area and population.""") 
 
 st.markdown(f"""Our 
-mean absolute percentage error for our prediction is {mean_mape}%. This is high due to the outlier countries. However our
-median absolute percentage error for our prediction is {median_mape}%.""")
+mean absolute percentage error for our immunization prediction is {mean_mape}%. This is high due to the outlier countries. However our
+median absolute percentage error for our immunization prediction is {median_mape}%.""")
 
 st.markdown(f"""Our R2 Score is {r2}, means that {r2_100}% of the 
 variability in the dependent variable (i.e., the variable being predicted by the model)
@@ -73,24 +73,24 @@ outlier_tresh = st.selectbox('Select outlier threshold', [ 1, 1.5, 2], index=1)
 #filtered_df = df[df['Year'].isin(years) & df['Country'].isin(countries) & df['prediction'].isin(predictions)]
 filtered_df = df[df['Year'].isin(years) & df['Country'].isin(countries)  ]
 # Allow the user to choose which columns to show in the data table
-default_columns = ['Country', 'Year', 'Immunization USD Mil', 'Immunization USD Mil_predicted', 'mape', 'prediction']
+default_columns = ['Country', 'Year', 'Immunization USD Mil', 'Immunization USD Mil_predicted', 'mape_immunization', 'prediction']
 columns = st.multiselect('Select column(s) to display', options=filtered_df.columns, default=default_columns)
 
 # Display the filtered data in a table with the selected columns
 st.subheader('Data Table')
-mean_mape_filt = round(filtered_df['mape'].mean(), 0)
-median_mape_filt = round(filtered_df['mape'].median(), 0)
+mean_mape_filt = round(filtered_df['mape_immunization'].mean(), 0)
+median_mape_filt = round(filtered_df['mape_immunization'].median(), 0)
 st.markdown(f"""Filtered data mean absolute percentage error is {mean_mape_filt}%
  and median absolute percentage error is {median_mape_filt}%.""")
 st.dataframe(filtered_df[columns])
 
 # Detect outlier country based on mape column
-df_out = filtered_df.dropna(subset=['mape'])
-q1 = df_out['mape'].quantile(0.25)
-q3 = df_out['mape'].quantile(0.75)
+df_out = filtered_df.dropna(subset=['mape_immunization'])
+q1 = df_out['mape_immunization'].quantile(0.25)
+q3 = df_out['mape_immunization'].quantile(0.75)
 
 iqr = q3 - q1
-outliers = df_out[(df_out['mape'] < q1 - outlier_tresh*iqr) | (df_out['mape'] > q3 + outlier_tresh*iqr)]
+outliers = df_out[(df_out['mape_immunization'] < q1 - outlier_tresh*iqr) | (df_out['mape_immunization'] > q3 + outlier_tresh*iqr)]
 
 # Display the outlier country if exists
 if not outliers.empty:
@@ -110,7 +110,7 @@ if not outliers.empty:
 
         st.subheader('Choropleth Map for Outlier Countries')
         value_col_options = filtered_df.columns
-        default_x_column = 'mape'
+        default_x_column = 'mape_immunization'
         value_col_outliers = st.selectbox('Select a value column', options=filtered_df.columns, index=filtered_df.columns.get_loc(default_x_column))
         fig_outliers = px.choropleth(outliers, locations='iso_alpha', color=value_col_outliers, hover_name='Country',hover_data=['Immunization USD Mil', 'Immunization USD Mil_predicted', 'mape'], projection='natural earth', title=f'{value_col_outliers} by Outlier Country')
         st.plotly_chart(fig_outliers)
