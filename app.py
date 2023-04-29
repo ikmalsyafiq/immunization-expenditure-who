@@ -73,7 +73,7 @@ outlier_tresh = st.selectbox('Select outlier threshold', [ 1, 1.5, 2], index=1)
 #filtered_df = df[df['Year'].isin(years) & df['Country'].isin(countries) & df['prediction'].isin(predictions)]
 filtered_df = df[df['Year'].isin(years) & df['Country'].isin(countries)  ]
 # Allow the user to choose which columns to show in the data table
-default_columns = ['Country', 'Year', 'Immunization USD Mil', 'Immunization USD Mil_predicted', 'mape_immunization', 'prediction']
+default_columns = ['Country', 'Year', 'Immunization USD Mil', 'Immunization USD Mil_predicted', 'mape_immunization', 'prediction_immunization']
 columns = st.multiselect('Select column(s) to display', options=filtered_df.columns, default=default_columns)
 
 # Display the filtered data in a table with the selected columns
@@ -85,19 +85,21 @@ st.markdown(f"""Filtered data mean absolute percentage error is {mean_mape_filt}
 st.dataframe(filtered_df[columns])
 
 # Detect outlier country based on mape column
-df_out = filtered_df.dropna(subset=['mape_immunization'])
-q1 = df_out['mape_immunization'].quantile(0.25)
-q3 = df_out['mape_immunization'].quantile(0.75)
+df_out = filtered_df.dropna(subset=['mape_immunization_adjusted'])
+q1 = df_out['mape_immunization_adjusted'].quantile(0.25)
+q3 = df_out['mape_immunization_adjusted'].quantile(0.75)
 
 iqr = q3 - q1
-outliers = df_out[(df_out['mape_immunization'] < q1 - outlier_tresh*iqr) | (df_out['mape_immunization'] > q3 + outlier_tresh*iqr)]
+outliers = df_out[(df_out['mape_immunization_adjusted'] < q1 - outlier_tresh*iqr) | (df_out['mape_immunization_adjusted'] > q3 + outlier_tresh*iqr)]
 
 # Display the outlier country if exists
 if not outliers.empty:
     try:
         st.subheader("Outlier Countries")
         st.markdown("""These are the countries that are considered outliers based on their predicted total immunization cost.
-         The outlier method we are using here is based on the interquartile range (IQR). 
+         This based on the mape adjusted columns computed by""")
+        st.markdown("""|actual value - predicted value| / minimum(actual value, predicted value)""")             
+        st.markdown("""The outlier method we are using here is based on the interquartile range (IQR). 
          The IQR is a measure of variability that is defined as the
          difference between the third quartile (Q3) and the first quartile (Q1) of a dataset. 
          The IQR represents the spread of the middle 50% of the data and is less sensitive to 
@@ -106,13 +108,13 @@ if not outliers.empty:
          According to Tukey's rule for outlier detection, any data points that fall below Q1-1.5IQR
          or above Q3+1.5IQR are considered outliers.
         """)
-        st.dataframe(outliers[["Country", "Year", 'Immunization USD Mil', 'Immunization USD Mil_predicted', "mape"]].reset_index(drop=True))
+        st.dataframe(outliers[["Country", "Year", 'Immunization USD Mil', 'Immunization USD Mil_predicted', "mape_immunization","mape_immunization_adjusted"]].reset_index(drop=True))
 
         st.subheader('Choropleth Map for Outlier Countries')
         value_col_options = filtered_df.columns
         default_x_column = 'mape_immunization'
         value_col_outliers = st.selectbox('Select a value column', options=filtered_df.columns, index=filtered_df.columns.get_loc(default_x_column))
-        fig_outliers = px.choropleth(outliers, locations='iso_alpha', color=value_col_outliers, hover_name='Country',hover_data=['Immunization USD Mil', 'Immunization USD Mil_predicted', 'mape'], projection='natural earth', title=f'{value_col_outliers} by Outlier Country')
+        fig_outliers = px.choropleth(outliers, locations='iso_alpha', color=value_col_outliers, hover_name='Country',hover_data=['Immunization USD Mil', 'Immunization USD Mil_predicted', 'mape_immunization'], projection='natural earth', title=f'{value_col_outliers} by Outlier Country')
         st.plotly_chart(fig_outliers)
     except:
         mm = True
@@ -145,7 +147,7 @@ elif plot_type == 'Scatter Plot':
     subheader_text = f'{plot_type} ({x_column} vs. {y_column})'
     st.subheader(subheader_text)
 
-    fig = px.scatter(filtered_df, x=x_column, y=y_column,hover_data=['Country','Year','Immunization USD Mil', 'Immunization USD Mil_predicted', 'mape'])
+    fig = px.scatter(filtered_df, x=x_column, y=y_column,hover_data=['Country','Year','Immunization USD Mil', 'Immunization USD Mil_predicted', 'mape_immunization'])
 
 elif plot_type == 'Bar Chart':
     default_x_column = 'Immunization USD Mil'
@@ -157,7 +159,7 @@ elif plot_type == 'Bar Chart':
     subheader_text = f'{plot_type} ({x_column} vs. {y_column})'
     st.subheader(subheader_text)
 
-    fig = px.bar(filtered_df, x=x_column, y=y_column,hover_data=['Country','Year','Immunization USD Mil', 'Immunization USD Mil_predicted', 'mape'])
+    fig = px.bar(filtered_df, x=x_column, y=y_column,hover_data=['Country','Year','Immunization USD Mil', 'Immunization USD Mil_predicted', 'mape_immunization'])
 
 elif plot_type == 'Line Chart':
     default_x_column = 'Immunization USD Mil'
@@ -168,7 +170,7 @@ elif plot_type == 'Line Chart':
     subheader_text = f'{plot_type} ({x_column} vs. {y_column})'
     st.subheader(subheader_text)
 
-    fig = px.line(filtered_df, x=x_column, y=y_column,hover_data=['Country','Year','Immunization USD Mil', 'Immunization USD Mil_predicted', 'mape'])
+    fig = px.line(filtered_df, x=x_column, y=y_column,hover_data=['Country','Year','Immunization USD Mil', 'Immunization USD Mil_predicted', 'mape_immunization'])
 
 else: # Box Plot
     default_x_column = 'Immunization USD Mil'
@@ -179,7 +181,7 @@ else: # Box Plot
     subheader_text = f'{plot_type} ({x_column} vs. {y_column})'
     st.subheader(subheader_text)
 
-    fig = px.box(filtered_df, x=x_column, y=y_column,hover_data=['Country','Year','Immunization USD Mil', 'Immunization USD Mil_predicted', 'mape'])
+    fig = px.box(filtered_df, x=x_column, y=y_column,hover_data=['Country','Year','Immunization USD Mil', 'Immunization USD Mil_predicted', 'mape_immunization'])
 
 
 st.plotly_chart(fig)
