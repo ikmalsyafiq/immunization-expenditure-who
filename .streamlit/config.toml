@@ -1,0 +1,8 @@
+[theme]
+base="light"
+primaryColor="#1a608f"
+backgroundColor="#009cde"
+font="Serif"
+
+[global]
+deprecation.showfileUploaderEncoding = false

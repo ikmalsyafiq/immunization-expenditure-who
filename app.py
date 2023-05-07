@@ -6,6 +6,22 @@ from scipy import stats
 import pycountry
 from sklearn.metrics import r2_score
 
+
+def custom_css(css: str):
+    st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
+
+css = """
+body {
+    font-family: Arial, sans-serif;
+}
+footer {
+    visibility: hidden;
+}
+"""
+
+custom_css(css)
+
+
 def get_country_iso_alpha3(country_name):
     try:
         return pycountry.countries.lookup(country_name).alpha_3
